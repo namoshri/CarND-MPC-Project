@@ -117,9 +117,10 @@ int main() {
 	  auto coeffs = polyfit(ptsx_transform, ptsy_transform, 3);
 	  double cte = polyeval(coeffs, 0);
 	  double epsi = -atan(coeffs[1]);
+          double lx = v * 0.44704 * 0.1;
 
 	  Eigen::VectorXd next_state(6);
-	  next_state << 0,0,0,v,cte,epsi;
+	  next_state << lx,0,0,v,cte,epsi;
 
 	  //auto vars = ptsx;
 	  auto vars = mpc.Solve(next_state, coeffs);

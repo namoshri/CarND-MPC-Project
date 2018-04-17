@@ -3,7 +3,9 @@ Self-Driving Car Engineer Nanodegree Program
 
 ---
 
-## Dependencies
+# Model Predictive Controller
+
+## Dependencies and prerequisites
 
 * cmake >= 3.5
  * All OSes: [click here for installation instructions](https://cmake.org/install/)
@@ -38,71 +40,72 @@ Self-Driving Car Engineer Nanodegree Program
 3. Compile: `cmake .. && make`
 4. Run it: `./mpc`.
 
-## Tips
+## Introduction
+Implement Model Predictive Control to drive the car around the track.
 
-1. It's recommended to test the MPC on basic examples to see if your implementation behaves as desired. One possible example
-is the vehicle starting offset of a straight line (reference). If the MPC implementation is correct, after some number of timesteps
-(not too many) it should find and track the reference line.
-2. The `lake_track_waypoints.csv` file has the waypoints of the lake track. You could use this to fit polynomials and points and see of how well your model tracks curve. NOTE: This file might be not completely in sync with the simulator so your solution should NOT depend on it.
-3. For visualization this C++ [matplotlib wrapper](https://github.com/lava/matplotlib-cpp) could be helpful.)
-4.  Tips for setting up your environment are available [here](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/23d376c7-0195-4276-bdf0-e02f1f3c665d)
-5. **VM Latency:** Some students have reported differences in behavior using VM's ostensibly a result of latency.  Please let us know if issues arise as a result of a VM environment.
+## Rubik points
+### Code and Compilation
+Code is available at [github](https://github.com/namoshri/CarND-MPC-Project) .
+Code is ready to execute without any errors.
 
-## Editor Settings
+### Model
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+**State**
+Below are state parameters model considers
+- x , y positions, 
+- ψ - orientation of car
+- v- velocity of car
+- psi Yaw angle
+- CTE - the cross track error
+- epsi - orientation error.
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
+First four parameters are given as input from simulator. As position of car given in map co-ordiantes converted it into vehicle co-ordinates.
 
-## Code Style
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
+**Actuators**
+Below are two actuators considered
+- δ - steering angle 
+- a acceleration 
 
-## Project Instructions and Rubric
+Lf (constant) distance of center of mass and front wheel of car
 
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
 
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/f1820894-8322-4bb3-81aa-b26b3c6dcbaf/lessons/b1ff3be0-c904-438e-aad3-2b5379f0e0c3/concepts/1a2255a0-e23c-44cf-8d41-39b8a3c8264a)
-for instructions and the project rubric.
+**Update equations**
+Below are equations expressed by model:
+x_[t+1] = x[t] + v[t] * cos(psi[t]) * dt
+y_[t+1] = y[t] + v[t] * sin(psi[t]) * dt
+psi_[t+1] = psi[t] + v[t] * delta[t] / Lf * dt
+v_[t+1] = v[t] + a[t] * dt
+cte[t+1] = f(x[t]) - y[t] + v[t] * sin(epsi[t]) * dt
+epsi[t+1] = psi[t] - psides[t] + v[t] * delta[t] / Lf * dt
 
-## Hints!
 
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
+These kinematic model equations helps to get new state from previous state.
 
-## Call for IDE Profiles Pull Requests
+### Timestep Length and Elapsed Duration (N & dt)
+There is always trade-off for choosing tunned values timestamps here.
+A good approach for setting N, dt is to first determine a reasonable range prediction horizon T. T is product of N and dt. Based on T dt and N tuned appropriately. 
+Chosen 1 secons as prediction horizon and after tunning 
+N set to 10,
+dt to 0.1
 
-Help your fellow students!
+### Polynomial Fitting and MPC Preprocessing
 
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
+coeffs = polyfit(ptsx, ptsy, 1);
 
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
+As mentioned in lectures, 3rd degree polynomial fitted for vehicle co-ordinates positions.
 
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
+Further, these input and trajecory reference given to MPC solver to get result solution back to feed to simulator.
 
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
+As mentioned in lesson, lower and upperbound constraints set for each vars. 
+FG_eval used to get next possible state.
 
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
+### Model Predictive Control with Latency
+Actuation command won't execute instantly.  A realistic delay might be 100 ms added . Same replicated to state before giving input to MPC solver. Latency here added to x state as seen implemented in main.cpp state vector formation.
 
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
+### Simulation
+ Click here to view output : [video](https://www.youtube.com/watch?v=9fwxipZF-io)
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+
+
+
