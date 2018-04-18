@@ -22,7 +22,7 @@ double dt = 0.1;
 const double Lf = 2.67;
 double ref_cte = 0;
 double ref_epsi = 0;
-double ref_v = 70.0 * 0.44704;
+double ref_v = 40.0 * 0.44704;
 
 size_t x_start = 0;
 size_t y_start = x_start + N;

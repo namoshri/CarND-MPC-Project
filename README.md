@@ -101,10 +101,12 @@ As mentioned in lesson, lower and upperbound constraints set for each vars.
 FG_eval used to get next possible state.
 
 ### Model Predictive Control with Latency
-Actuation command won't execute instantly.  A realistic delay might be 100 ms added . Same replicated to state before giving input to MPC solver. Latency here added to x state as seen implemented in main.cpp state vector formation.
+Actuation command won't execute instantly.  A realistic delay might be 100 ms added . Same replicated to state before giving input to MPC solver. Latency here added to all states as seen implemented in main.cpp state vector formation. Latency addition contributed to get better speed. 
 
 ### Simulation
  Click here to view output : [video](https://www.youtube.com/watch?v=9fwxipZF-io)
+ 
+ Click here to view car track with latency [video](https://youtu.be/FWmcnvKR-Qg)
 
 
 

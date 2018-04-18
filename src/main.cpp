@@ -38,7 +38,7 @@ string hasData(string s) {
 // Evaluate a polynomial.
 double polyeval(Eigen::VectorXd coeffs, double x) {
   double result = 0.0;
-  for (int i = 0; i < coeffs.size(); i++) {
+  for (unsigned int i = 0; i < coeffs.size(); i++) {
     result += coeffs[i] * pow(x, i);
   }
   return result;
@@ -53,11 +53,11 @@ Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
   assert(order >= 1 && order <= xvals.size() - 1);
   Eigen::MatrixXd A(xvals.size(), order + 1);
 
-  for (int i = 0; i < xvals.size(); i++) {
+  for (unsigned int i = 0; i < xvals.size(); i++) {
     A(i, 0) = 1.0;
   }
 
-  for (int j = 0; j < xvals.size(); j++) {
+  for (unsigned int j = 0; j < xvals.size(); j++) {
     for (int i = 0; i < order; i++) {
       A(j, i + 1) = A(j, i) * xvals(j);
     }
@@ -96,10 +96,12 @@ int main() {
           double v = j[1]["speed"];
 	  double steer_value = j[1]["steering_angle"];
 	  double throttle_value = j[1]["throttle"];
+	  double Lf = 2.67;
+	  double latency = 0.1;
 
 
 	  //1. Transformation in different orientation space
-	  for (int i = 0; i < ptsx.size(); i++) {
+	  for (unsigned int i = 0; i < ptsx.size(); i++) {
 		double shift_x = ptsx[i]-px;
 		double shift_y = ptsy[i]-py;
 
@@ -117,13 +119,25 @@ int main() {
 	  auto coeffs = polyfit(ptsx_transform, ptsy_transform, 3);
 	  double cte = polyeval(coeffs, 0);
 	  double epsi = -atan(coeffs[1]);
-          double lx = v * 0.44704 * 0.1;
 
-	  Eigen::VectorXd next_state(6);
-	  next_state << lx,0,0,v,cte,epsi;
+
+	  //  change of sign because turning left is negative sign in simulator but positive yaw for MPC
+	  double delta = -steer_value;
+
+	  //to convert miles per hour to meter per second
+	  v = v * 0.44704;
+	  px = v * latency;
+	  py = 0;
+	  v = v + throttle_value * latency;
+	  cte = cte + v * CppAD::sin(epsi) * latency;
+	  psi = v * delta / Lf * latency;
+	  epsi = epsi + v * delta / Lf * latency;
+
+	  Eigen::VectorXd state(6);
+	  state << px, py, psi, v, cte, epsi;
 
 	  //auto vars = ptsx;
-	  auto vars = mpc.Solve(next_state, coeffs);
+	  auto vars = mpc.Solve(state, coeffs);
 
           json msgJson;
           //Display the waypoints/reference line
@@ -141,7 +155,7 @@ int main() {
           //Display the MPC predicted trajectory
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
-	  for (int i = 2; i < vars.size(); i++)
+	  for (unsigned int i = 2; i < vars.size(); i++)
 	  {
 		if (i%2 == 0)
 			mpc_x_vals.push_back(vars[i]);
@@ -151,7 +165,6 @@ int main() {
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
 
-	  double Lf = 2.67;
           msgJson["steering_angle"] = vars[0]/(deg2rad(25)*Lf);
           msgJson["throttle"] = vars[1];
 
